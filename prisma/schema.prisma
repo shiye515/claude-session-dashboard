@@ -1,0 +1,37 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Provider {
+  openai
+  anthropic
+}
+
+model Log {
+  id               String    @id @default(uuid())
+  provider         Provider
+  endpoint         String
+  method          String
+  requestHeaders  Json      @map("request_headers")
+  requestBody     Json      @map("request_body")
+  responseStatus  Int       @map("response_status")
+  responseHeaders Json      @map("response_headers")
+  responseBody     Json      @map("response_body")
+  isStreaming      Boolean   @default(false) @map("is_streaming")
+  promptTokens     Int?      @map("prompt_tokens")
+  completionTokens Int?     @map("completion_tokens")
+  totalTokens      Int?      @map("total_tokens")
+  durationMs       Int?      @map("duration_ms")
+  model           String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  @@map("logs")
+}
