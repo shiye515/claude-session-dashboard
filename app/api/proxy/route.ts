@@ -132,29 +132,28 @@ async function handleProxy(request: NextRequest) {
       // Handle streaming response
       const { stream, collectedData } = await handleStreamingResponse(response)
 
-      // Parse streaming events for usage info
-      const usage = extractUsageFromStream(collectedData, provider)
-      promptTokens = usage.promptTokens
-      completionTokens = usage.completionTokens
-      totalTokens = usage.totalTokens
+      // Save log after stream completes (async, non-blocking)
+      collectedData.then((events) => {
+        // Parse streaming events for usage info
+        const usage = extractUsageFromStream(events, provider)
 
-      // Save log asynchronously with full response content
-      saveLog({
-        provider,
-        endpoint: parsedUrl.pathname,
-        targetHost: parsedUrl.host,
-        method: request.method,
-        requestHeaders: maskedHeaders,
-        requestBody,
-        responseStatus: response.status,
-        responseHeaders,
-        responseBody: { streaming: true, events: collectedData },
-        isStreaming: true,
-        promptTokens,
-        completionTokens,
-        totalTokens,
-        durationMs,
-        model
+        saveLog({
+          provider,
+          endpoint: parsedUrl.pathname,
+          targetHost: parsedUrl.host,
+          method: request.method,
+          requestHeaders: maskedHeaders,
+          requestBody,
+          responseStatus: response.status,
+          responseHeaders,
+          responseBody: { streaming: true, events },
+          isStreaming: true,
+          promptTokens: usage.promptTokens,
+          completionTokens: usage.completionTokens,
+          totalTokens: usage.totalTokens,
+          durationMs,
+          model
+        })
       })
 
       return new Response(stream, {
@@ -387,7 +386,7 @@ function extractUsageFromResponse(body: unknown, provider: string): {
 
 async function handleStreamingResponse(response: Response): Promise<{
   stream: ReadableStream<Uint8Array>
-  collectedData: string[]
+  collectedData: Promise<string[]>
 }> {
   const reader = response.body?.getReader()
   if (!reader) {
@@ -396,18 +395,45 @@ async function handleStreamingResponse(response: Response): Promise<{
 
   const chunks: string[] = []
   const decoder = new TextDecoder()
+  let buffer = ''
+  let resolveCollected: (data: string[]) => void
+  const collectedDataPromise = new Promise<string[]>((resolve) => {
+    resolveCollected = resolve
+  })
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
         while (true) {
           const { done, value } = await reader.read()
-          if (done) break
+
+          if (done) {
+            // Process any remaining buffer
+            if (buffer.trim()) {
+              const lines = buffer.split('\n')
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6).trim()
+                  if (data && data !== '[DONE]') {
+                    chunks.push(data)
+                  }
+                }
+              }
+            }
+            controller.close()
+            resolveCollected(chunks)
+            break
+          }
 
           controller.enqueue(value)
 
-          const text = decoder.decode(value, { stream: true })
-          const lines = text.split('\n')
+          // Decode and accumulate
+          buffer += decoder.decode(value, { stream: true })
+
+          // Process complete lines
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || '' // Keep incomplete line in buffer
+
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const data = line.slice(6).trim()
@@ -417,14 +443,14 @@ async function handleStreamingResponse(response: Response): Promise<{
             }
           }
         }
-        controller.close()
       } catch (error) {
         controller.error(error)
+        resolveCollected(chunks)
       }
     }
   })
 
-  return { stream, collectedData: chunks }
+  return { stream, collectedData: collectedDataPromise }
 }
 
 interface LogData {
