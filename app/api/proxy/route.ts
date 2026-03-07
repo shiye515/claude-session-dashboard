@@ -138,7 +138,7 @@ async function handleProxy(request: NextRequest) {
       completionTokens = usage.completionTokens
       totalTokens = usage.totalTokens
 
-      // Save log asynchronously
+      // Save log asynchronously with full response content
       saveLog({
         provider,
         endpoint: parsedUrl.pathname,
@@ -148,7 +148,7 @@ async function handleProxy(request: NextRequest) {
         requestBody,
         responseStatus: response.status,
         responseHeaders,
-        responseBody: { streaming: true, chunks: collectedData.length },
+        responseBody: { streaming: true, events: collectedData },
         isStreaming: true,
         promptTokens,
         completionTokens,
