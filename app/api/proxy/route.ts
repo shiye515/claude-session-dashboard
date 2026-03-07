@@ -388,67 +388,57 @@ async function handleStreamingResponse(response: Response): Promise<{
   stream: ReadableStream<Uint8Array>
   collectedData: Promise<string[]>
 }> {
-  const reader = response.body?.getReader()
-  if (!reader) {
+  if (!response.body) {
     throw new Error('No response body')
   }
 
   const chunks: string[] = []
   const decoder = new TextDecoder()
   let buffer = ''
+
   let resolveCollected: (data: string[]) => void
   const collectedDataPromise = new Promise<string[]>((resolve) => {
     resolveCollected = resolve
   })
 
-  const stream = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      try {
-        while (true) {
-          const { done, value } = await reader.read()
+  const transformStream = new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
+      // Pass through the chunk
+      controller.enqueue(chunk)
 
-          if (done) {
-            // Process any remaining buffer
-            if (buffer.trim()) {
-              const lines = buffer.split('\n')
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.slice(6).trim()
-                  if (data && data !== '[DONE]') {
-                    chunks.push(data)
-                  }
-                }
-              }
-            }
-            controller.close()
-            resolveCollected(chunks)
-            break
+      // Decode and collect
+      buffer += decoder.decode(chunk, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim()
+          if (data && data !== '[DONE]') {
+            chunks.push(data)
           }
-
-          controller.enqueue(value)
-
-          // Decode and accumulate
-          buffer += decoder.decode(value, { stream: true })
-
-          // Process complete lines
-          const lines = buffer.split('\n')
-          buffer = lines.pop() || '' // Keep incomplete line in buffer
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6).trim()
-              if (data && data !== '[DONE]') {
-                chunks.push(data)
-              }
+        }
+      }
+    },
+    flush() {
+      // Process remaining buffer
+      if (buffer.trim()) {
+        const lines = buffer.split('\n')
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim()
+            if (data && data !== '[DONE]') {
+              chunks.push(data)
             }
           }
         }
-      } catch (error) {
-        controller.error(error)
-        resolveCollected(chunks)
       }
+      resolveCollected(chunks)
     }
   })
+
+  // Pipe the original response through the transform
+  const stream = response.body.pipeThrough(transformStream)
 
   return { stream, collectedData: collectedDataPromise }
 }
