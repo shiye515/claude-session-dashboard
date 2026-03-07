@@ -94,8 +94,7 @@ export async function GET(request: NextRequest) {
       promptTokens: number
       completionTokens: number
       totalTokens: number
-      openai: number
-      anthropic: number
+      [key: string]: number | string
     }
 
     type DailyStats = Record<string, DailyStat>
@@ -110,23 +109,26 @@ export async function GET(request: NextRequest) {
 
     const dailyStats = logs.reduce((acc: DailyStats, log: LogItem) => {
       const date = log.createdAt.toISOString().split('T')[0]
+      const provider = log.provider || 'unknown'
+
       if (!acc[date]) {
         acc[date] = {
           date,
           count: 0,
           promptTokens: 0,
           completionTokens: 0,
-          totalTokens: 0,
-          openai: 0,
-          anthropic: 0
+          totalTokens: 0
         }
       }
       acc[date].count++
       acc[date].promptTokens += log.promptTokens || 0
       acc[date].completionTokens += log.completionTokens || 0
       acc[date].totalTokens += log.totalTokens || 0
-      if (log.provider === 'openai') acc[date].openai++
-      if (log.provider === 'anthropic') acc[date].anthropic++
+      // Track per provider
+      if (!acc[date][provider]) {
+        acc[date][provider] = 0
+      }
+      ;(acc[date][provider] as number)++
       return acc
     }, {} as DailyStats)
 

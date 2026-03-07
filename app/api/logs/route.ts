@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { Provider } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,8 +15,8 @@ export async function GET(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {}
 
-    if (providerParam && (providerParam === 'openai' || providerParam === 'anthropic')) {
-      where.provider = providerParam as Provider
+    if (providerParam) {
+      where.provider = { contains: providerParam, mode: 'insensitive' }
     }
 
     if (model) {
@@ -37,7 +36,8 @@ export async function GET(request: NextRequest) {
     if (search) {
       where.OR = [
         { endpoint: { contains: search, mode: 'insensitive' } },
-        { model: { contains: search, mode: 'insensitive' } }
+        { model: { contains: search, mode: 'insensitive' } },
+        { provider: { contains: search, mode: 'insensitive' } }
       ]
     }
 

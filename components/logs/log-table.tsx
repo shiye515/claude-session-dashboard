@@ -9,7 +9,25 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table'
-import { Log } from '@prisma/client'
+
+interface Log {
+  id: string
+  provider: string
+  endpoint: string
+  method: string
+  requestHeaders: Record<string, unknown>
+  requestBody: Record<string, unknown>
+  responseStatus: number
+  responseHeaders: Record<string, unknown>
+  responseBody: Record<string, unknown>
+  isStreaming: boolean
+  promptTokens: number | null
+  completionTokens: number | null
+  totalTokens: number | null
+  durationMs: number | null
+  model: string | null
+  createdAt: Date | string
+}
 
 interface LogTableProps {
   logs: Log[]
@@ -39,13 +57,18 @@ export function LogTable({ logs, onRowClick }: LogTableProps) {
   }
 
   const getProviderBadge = (provider: string) => {
-    return provider === 'openai' ? (
-      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-        OpenAI
-      </Badge>
-    ) : (
-      <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-        Anthropic
+    const colors: Record<string, string> = {
+      openai: 'bg-green-50 text-green-700 border-green-200',
+      anthropic: 'bg-orange-50 text-orange-700 border-orange-200',
+      dashscope: 'bg-blue-50 text-blue-700 border-blue-200',
+      deepseek: 'bg-purple-50 text-purple-700 border-purple-200',
+      moonshot: 'bg-pink-50 text-pink-700 border-pink-200',
+      zhipu: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+    }
+    const colorClass = colors[provider.toLowerCase()] || 'bg-gray-50 text-gray-700 border-gray-200'
+    return (
+      <Badge variant="outline" className={colorClass}>
+        {provider}
       </Badge>
     )
   }
@@ -85,7 +108,7 @@ export function LogTable({ logs, onRowClick }: LogTableProps) {
             </TableCell>
             <TableCell>{getProviderBadge(log.provider)}</TableCell>
             <TableCell className="font-mono text-sm">{log.model || '-'}</TableCell>
-            <TableCell className="font-mono text-sm max-w-[200px] truncate">
+            <TableCell className="font-mono text-sm max-w-[200px] truncate" title={log.endpoint}>
               {log.endpoint}
             </TableCell>
             <TableCell>{getStatusBadge(log.responseStatus)}</TableCell>

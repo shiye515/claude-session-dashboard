@@ -9,7 +9,25 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Log } from '@prisma/client'
+
+interface Log {
+  id: string
+  provider: string
+  endpoint: string
+  method: string
+  requestHeaders: Record<string, unknown>
+  requestBody: Record<string, unknown>
+  responseStatus: number
+  responseHeaders: Record<string, unknown>
+  responseBody: Record<string, unknown>
+  isStreaming: boolean
+  promptTokens: number | null
+  completionTokens: number | null
+  totalTokens: number | null
+  durationMs: number | null
+  model: string | null
+  createdAt: Date | string
+}
 
 interface LogDetailProps {
   log: Log | null
@@ -34,9 +52,7 @@ export function LogDetail({ log, open, onOpenChange }: LogDetailProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             请求详情
-            <Badge variant="outline">
-              {log.provider === 'openai' ? 'OpenAI' : 'Anthropic'}
-            </Badge>
+            <Badge variant="outline">{log.provider}</Badge>
           </DialogTitle>
         </DialogHeader>
         <ScrollArea className="h-[60vh]">
@@ -53,9 +69,13 @@ export function LogDetail({ log, open, onOpenChange }: LogDetailProps) {
                   {new Date(log.createdAt).toLocaleString('zh-CN')}
                 </span>
               </div>
-              <div>
+              <div className="col-span-2">
                 <span className="text-muted-foreground">端点:</span>
-                <code className="ml-2">{log.endpoint}</code>
+                <code className="ml-2 break-all">{log.endpoint}</code>
+              </div>
+              <div>
+                <span className="text-muted-foreground">方法:</span>
+                <code className="ml-2">{log.method}</code>
               </div>
               <div>
                 <span className="text-muted-foreground">模型:</span>

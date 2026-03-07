@@ -10,15 +10,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Provider {
-  openai
-  anthropic
-}
-
 model Log {
   id               String    @id @default(uuid())
-  provider         Provider
-  endpoint         String
+  provider         String    // Provider name: openai, anthropic, dashscope, deepseek, etc.
+  endpoint         String    // Full endpoint path including host
   method          String
   requestHeaders  Json      @map("request_headers")
   requestBody     Json      @map("request_body")
@@ -33,5 +28,7 @@ model Log {
   model           String?
   createdAt        DateTime  @default(now()) @map("created_at")
 
+  @@index([provider])
+  @@index([createdAt])
   @@map("logs")
 }

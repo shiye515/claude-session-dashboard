@@ -1,13 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { StatsCards } from '@/components/dashboard/stats-cards'
-import { UsageChart } from '@/components/dashboard/chart'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { History } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface Stats {
   overview: {
@@ -38,15 +36,66 @@ interface Stats {
     promptTokens: number
     completionTokens: number
     totalTokens: number
-    openai: number
-    anthropic: number
+    [key: string]: number | string
   }>
+}
+
+// Dynamic import for StatsCards and UsageChart
+function StatsCards({ stats }: { stats: Stats['overview'] }) {
+  const cards = [
+    {
+      title: '总请求数',
+      value: stats.totalRequests.toLocaleString(),
+      icon: '📊',
+      description: 'API 调用次数'
+    },
+    {
+      title: '成功率',
+      value: `${stats.successRate}%`,
+      icon: '✅',
+      description: '请求成功比例'
+    },
+    {
+      title: 'Token 使用',
+      value: stats.totalTokens.toLocaleString(),
+      icon: '⚡',
+      description: `输入: ${stats.totalPromptTokens.toLocaleString()} | 输出: ${stats.totalCompletionTokens.toLocaleString()}`
+    },
+    {
+      title: '平均响应时间',
+      value: `${Math.round(stats.avgDurationMs)}ms`,
+      icon: '⏱️',
+      description: '请求平均耗时'
+    }
+  ]
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {cards.map((card) => (
+        <Card key={card.title}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+            <span className="text-lg">{card.icon}</span>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{card.value}</div>
+            <p className="text-xs text-muted-foreground">{card.description}</p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
 }
 
 export default function HomePage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [UsageChart, setUsageChart] = useState<React.ComponentType<{ data: Stats['daily'] }> | null>(null)
+
+  useEffect(() => {
+    import('@/components/dashboard/chart').then(mod => setUsageChart(() => mod.UsageChart))
+  }, [])
 
   useEffect(() => {
     fetchStats()
@@ -118,7 +167,7 @@ export default function HomePage() {
             <CardTitle>请求趋势</CardTitle>
           </CardHeader>
           <CardContent>
-            {stats.daily.length > 0 ? (
+            {stats.daily.length > 0 && UsageChart ? (
               <UsageChart data={stats.daily} />
             ) : (
               <div className="flex items-center justify-center h-[300px] text-muted-foreground">
@@ -138,9 +187,7 @@ export default function HomePage() {
                 {stats.byProvider.map((p) => (
                   <div key={p.provider} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">
-                        {p.provider === 'openai' ? 'OpenAI' : 'Anthropic'}
-                      </Badge>
+                      <Badge variant="outline">{p.provider}</Badge>
                       <span className="text-sm text-muted-foreground">
                         {p.count} 次请求
                       </span>
@@ -198,16 +245,33 @@ export default function HomePage() {
         <CardContent>
           <div className="space-y-4 text-sm">
             <div>
-              <h4 className="font-semibold mb-1">OpenAI</h4>
-              <code className="block bg-muted p-2 rounded">
-                base_url = &quot;http://localhost:3000/api/proxy/openai/v1&quot;
+              <h4 className="font-semibold mb-1">通用代理</h4>
+              <p className="text-muted-foreground mb-2">将原 API 地址作为 target 参数传入：</p>
+              <code className="block bg-muted p-2 rounded break-all">
+                http://localhost:3000/api/proxy?target=https%3A%2F%2Fapi.openai.com%2Fv1%2Fchat%2Fcompletions
               </code>
             </div>
             <div>
-              <h4 className="font-semibold mb-1">Anthropic</h4>
-              <code className="block bg-muted p-2 rounded">
-                base_url = &quot;http://localhost:3000/api/proxy/anthropic/v1&quot;
-              </code>
+              <h4 className="font-semibold mb-1">示例：OpenAI SDK</h4>
+              <pre className="bg-muted p-2 rounded text-xs overflow-auto">
+{`from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:3000/api/proxy?target=https://api.openai.com/v1",
+    api_key="your-api-key"
+)`}
+              </pre>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">示例：Anthropic SDK</h4>
+              <pre className="bg-muted p-2 rounded text-xs overflow-auto">
+{`from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="http://localhost:3000/api/proxy?target=https://api.anthropic.com",
+    api_key="your-api-key"
+)`}
+              </pre>
             </div>
           </div>
         </CardContent>
