@@ -100,7 +100,7 @@ async function handleProxy(request: NextRequest) {
   const provider = detectProvider(parsedUrl.hostname)
 
   // Extract model from request body
-  const model = extractModel(requestBody, provider)
+  const model = extractModel(requestBody)
 
   try {
     // Forward request to target
@@ -144,7 +144,7 @@ async function handleProxy(request: NextRequest) {
       // Save log after stream completes (async, non-blocking)
       collectedData.then((events) => {
         // Parse streaming events for usage info
-        const usage = extractUsageFromStream(events, provider)
+        const usage = extractUsageFromStream(events)
         console.log(events, 'events')
 
         saveLog({
@@ -185,7 +185,7 @@ async function handleProxy(request: NextRequest) {
       }
 
       // Extract usage from response
-      const usage = extractUsageFromResponse(responseBody, provider)
+      const usage = extractUsageFromResponse(responseBody)
       promptTokens = usage.promptTokens
       completionTokens = usage.completionTokens
       totalTokens = usage.totalTokens
@@ -293,7 +293,7 @@ function checkIfStreaming(body: unknown, headers: Record<string, string>): boole
   return accept.includes('text/event-stream')
 }
 
-function extractModel(body: unknown, provider: string): string | null {
+function extractModel(body: unknown): string | null {
   if (!body || typeof body !== 'object') return null
 
   const obj = body as Record<string, unknown>
@@ -326,10 +326,7 @@ function extractModelFromResponse(body: unknown, provider: string): string | nul
   return null
 }
 
-function extractUsageFromStream(
-  chunks: string[],
-  provider: string,
-): {
+function extractUsageFromStream(chunks: string[]): {
   promptTokens: number | null
   completionTokens: number | null
   totalTokens: number | null
@@ -370,10 +367,7 @@ function extractUsageFromStream(
   }
 }
 
-function extractUsageFromResponse(
-  body: unknown,
-  provider: string,
-): {
+function extractUsageFromResponse(body: unknown): {
   promptTokens: number | null
   completionTokens: number | null
   totalTokens: number | null
@@ -415,12 +409,11 @@ function handleStreamingResponse(response: Response): {
   }
 
   const chunks: string[] = []
-  let resolve: (value: string[]) => void, reject: (reason?: unknown) => void
+  let resolve: (value: string[]) => void
 
-  const controllablePromise = new Promise<string[]>((res, rej) => {
+  const controllablePromise = new Promise<string[]>((res) => {
     // 将内部的 res/rej 赋值给外部变量
     resolve = res
-    reject = rej
   })
   const decoder = new TextDecoder()
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 interface Log {
   id: string
@@ -43,18 +43,14 @@ export default function LogsPage() {
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
 
-  useEffect(() => {
-    fetchLogs()
-  }, [page, provider])
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '20',
         ...(provider && { provider }),
-        ...(search && { search })
+        ...(search && { search }),
       })
       const response = await fetch(`/api/logs?${params}`)
       const result = await response.json()
@@ -64,12 +60,15 @@ export default function LogsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, provider, search])
+
+  useEffect(() => {
+    fetchLogs()
+  }, [fetchLogs])
 
   const handleSearch = () => {
     setSearch(searchInput)
     setPage(1)
-    fetchLogs()
   }
 
   const handleClearLogs = async () => {
@@ -95,8 +94,8 @@ export default function LogsPage() {
   }> | null>(null)
 
   useEffect(() => {
-    import('@/components/logs/log-table').then(mod => setLogTable(() => mod.LogTable))
-    import('@/components/logs/log-detail').then(mod => setLogDetail(() => mod.LogDetail))
+    import('@/components/logs/log-table').then((mod) => setLogTable(() => mod.LogTable))
+    import('@/components/logs/log-detail').then((mod) => setLogDetail(() => mod.LogDetail))
   }, [])
 
   return (
@@ -110,7 +109,21 @@ export default function LogsPage() {
           className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 py-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
           onClick={handleClearLogs}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 6h18" />
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+          </svg>
           清空日志
         </button>
       </div>
@@ -131,7 +144,20 @@ export default function LogsPage() {
                 onClick={handleSearch}
                 className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
               </button>
             </div>
             <select
@@ -143,30 +169,28 @@ export default function LogsPage() {
               className="flex h-9 w-[150px] items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             >
               <option value="">全部提供商</option>
-              {PROVIDERS.map(p => (
-                <option key={p} value={p}>{p}</option>
+              {PROVIDERS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
               ))}
             </select>
           </div>
         </div>
         <div className="p-6 pt-0">
           {loading ? (
-            <div className="flex items-center justify-center h-32 text-muted-foreground">
-              加载中...
-            </div>
+            <div className="flex items-center justify-center h-32 text-muted-foreground">加载中...</div>
           ) : data?.logs ? (
             <>
               {LogTable && <LogTable logs={data.logs} onRowClick={setSelectedLog} />}
               {data.pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                  <div className="text-sm text-muted-foreground">
-                    共 {data.pagination.total} 条记录
-                  </div>
+                  <div className="text-sm text-muted-foreground">共 {data.pagination.total} 条记录</div>
                   <div className="flex gap-2">
                     <button
                       className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
                       disabled={page <= 1}
-                      onClick={() => setPage(p => p - 1)}
+                      onClick={() => setPage((p) => p - 1)}
                     >
                       上一页
                     </button>
@@ -176,7 +200,7 @@ export default function LogsPage() {
                     <button
                       className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
                       disabled={page >= data.pagination.totalPages}
-                      onClick={() => setPage(p => p + 1)}
+                      onClick={() => setPage((p) => p + 1)}
                     >
                       下一页
                     </button>
@@ -185,14 +209,14 @@ export default function LogsPage() {
               )}
             </>
           ) : (
-            <div className="flex items-center justify-center h-32 text-muted-foreground">
-              暂无数据
-            </div>
+            <div className="flex items-center justify-center h-32 text-muted-foreground">暂无数据</div>
           )}
         </div>
       </div>
 
-      {LogDetail && <LogDetail log={selectedLog} open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)} />}
+      {LogDetail && (
+        <LogDetail log={selectedLog} open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)} />
+      )}
     </div>
   )
 }

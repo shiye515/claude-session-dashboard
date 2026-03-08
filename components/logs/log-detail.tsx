@@ -1,11 +1,6 @@
 'use client'
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -48,7 +43,7 @@ export function LogDetail({ log, open, onOpenChange }: LogDetailProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh]">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-2rem)] max-h-[80vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             请求详情
@@ -65,9 +60,7 @@ export function LogDetail({ log, open, onOpenChange }: LogDetailProps) {
               </div>
               <div>
                 <span className="text-muted-foreground">时间:</span>
-                <span className="ml-2">
-                  {new Date(log.createdAt).toLocaleString('zh-CN')}
-                </span>
+                <span className="ml-2">{new Date(log.createdAt).toLocaleString('zh-CN')}</span>
               </div>
               <div className="col-span-2">
                 <span className="text-muted-foreground">端点:</span>
@@ -114,9 +107,7 @@ export function LogDetail({ log, open, onOpenChange }: LogDetailProps) {
             {/* 请求头 */}
             <div>
               <h4 className="font-semibold mb-2">请求头</h4>
-              <pre className="bg-muted p-3 rounded-md text-xs overflow-auto">
-                {formatJson(log.requestHeaders)}
-              </pre>
+              <pre className="bg-muted p-3 rounded-md text-xs overflow-auto">{formatJson(log.requestHeaders)}</pre>
             </div>
 
             {/* 请求体 */}

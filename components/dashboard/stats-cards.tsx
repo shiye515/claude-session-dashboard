@@ -1,7 +1,6 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Activity, Zap, Clock, TrendingUp } from 'lucide-react'
 
 interface StatsCardsProps {
@@ -21,26 +20,26 @@ export function StatsCards({ stats }: StatsCardsProps) {
       title: '总请求数',
       value: stats.totalRequests.toLocaleString(),
       icon: Activity,
-      description: 'API 调用次数'
+      description: 'API 调用次数',
     },
     {
       title: '成功率',
       value: `${stats.successRate}%`,
       icon: TrendingUp,
-      description: '请求成功比例'
+      description: '请求成功比例',
     },
     {
       title: 'Token 使用',
       value: stats.totalTokens.toLocaleString(),
       icon: Zap,
-      description: `输入: ${stats.totalPromptTokens.toLocaleString()} | 输出: ${stats.totalCompletionTokens.toLocaleString()}`
+      description: `输入: ${stats.totalPromptTokens.toLocaleString()} | 输出: ${stats.totalCompletionTokens.toLocaleString()}`,
     },
     {
       title: '平均响应时间',
       value: `${Math.round(stats.avgDurationMs)}ms`,
       icon: Clock,
-      description: '请求平均耗时'
-    }
+      description: '请求平均耗时',
+    },
   ]
 
   return (

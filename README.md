@@ -28,11 +28,21 @@ npm install
 
 ### 2. 配置环境变量
 
-创建 `.env` 文件：
+复制环境变量模板并按需修改：
+
+```bash
+cp .env.example .env
+```
+
+`.env` 示例：
 
 ```env
-# 数据库连接
+# Database
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/llm_proxy?schema=public"
+
+# API keys (optional)
+OPENAI_API_KEY=""
+ANTHROPIC_API_KEY=""
 ```
 
 ### 3. 初始化数据库
@@ -59,7 +69,7 @@ npm run dev
 
 ```
 原始地址: https://api.openai.com/v1/chat/completions
-代理地址: http://localhost:3000/api/proxy?target=https%3A%2F%2Fapi.openai.com%2Fv1%2Fchat%2Fcompletions
+代理地址: http://localhost:3000/api/proxy?target=https://api.openai.com/v1/chat/completions
 ```
 
 ### Python SDK 示例
@@ -184,24 +194,24 @@ claude-session-dashboard/
 
 ### logs 表
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | UUID | 主键 |
-| provider | VARCHAR | 提供商标识 (openai, anthropic, dashscope 等) |
-| endpoint | VARCHAR | 完整端点路径 (含主机) |
-| method | VARCHAR | HTTP 方法 |
-| request_headers | JSONB | 请求头（脱敏） |
-| request_body | JSONB | 请求体 |
-| response_status | INTEGER | 响应状态码 |
-| response_headers | JSONB | 响应头 |
-| response_body | JSONB | 响应体 |
-| is_streaming | BOOLEAN | 是否流式请求 |
-| prompt_tokens | INTEGER | 输入 token 数 |
-| completion_tokens | INTEGER | 输出 token 数 |
-| total_tokens | INTEGER | 总 token 数 |
-| duration_ms | INTEGER | 请求耗时 |
-| model | VARCHAR | 使用的模型 |
-| created_at | TIMESTAMP | 创建时间 |
+| 字段              | 类型      | 说明                                         |
+| ----------------- | --------- | -------------------------------------------- |
+| id                | UUID      | 主键                                         |
+| provider          | VARCHAR   | 提供商标识 (openai, anthropic, dashscope 等) |
+| endpoint          | VARCHAR   | 完整端点路径 (含主机)                        |
+| method            | VARCHAR   | HTTP 方法                                    |
+| request_headers   | JSONB     | 请求头（脱敏）                               |
+| request_body      | JSONB     | 请求体                                       |
+| response_status   | INTEGER   | 响应状态码                                   |
+| response_headers  | JSONB     | 响应头                                       |
+| response_body     | JSONB     | 响应体                                       |
+| is_streaming      | BOOLEAN   | 是否流式请求                                 |
+| prompt_tokens     | INTEGER   | 输入 token 数                                |
+| completion_tokens | INTEGER   | 输出 token 数                                |
+| total_tokens      | INTEGER   | 总 token 数                                  |
+| duration_ms       | INTEGER   | 请求耗时                                     |
+| model             | VARCHAR   | 使用的模型                                   |
+| created_at        | TIMESTAMP | 创建时间                                     |
 
 ## 支持的提供商
 

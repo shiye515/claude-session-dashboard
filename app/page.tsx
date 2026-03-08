@@ -47,26 +47,26 @@ function StatsCards({ stats }: { stats: Stats['overview'] }) {
       title: '总请求数',
       value: stats.totalRequests.toLocaleString(),
       icon: '📊',
-      description: 'API 调用次数'
+      description: 'API 调用次数',
     },
     {
       title: '成功率',
       value: `${stats.successRate}%`,
       icon: '✅',
-      description: '请求成功比例'
+      description: '请求成功比例',
     },
     {
       title: 'Token 使用',
       value: stats.totalTokens.toLocaleString(),
       icon: '⚡',
-      description: `输入: ${stats.totalPromptTokens.toLocaleString()} | 输出: ${stats.totalCompletionTokens.toLocaleString()}`
+      description: `输入: ${stats.totalPromptTokens.toLocaleString()} | 输出: ${stats.totalCompletionTokens.toLocaleString()}`,
     },
     {
       title: '平均响应时间',
       value: `${Math.round(stats.avgDurationMs)}ms`,
       icon: '⏱️',
-      description: '请求平均耗时'
-    }
+      description: '请求平均耗时',
+    },
   ]
 
   return (
@@ -94,7 +94,7 @@ export default function HomePage() {
   const [UsageChart, setUsageChart] = useState<React.ComponentType<{ data: Stats['daily'] }> | null>(null)
 
   useEffect(() => {
-    import('@/components/dashboard/chart').then(mod => setUsageChart(() => mod.UsageChart))
+    import('@/components/dashboard/chart').then((mod) => setUsageChart(() => mod.UsageChart))
   }, [])
 
   useEffect(() => {
@@ -170,9 +170,7 @@ export default function HomePage() {
             {stats.daily.length > 0 && UsageChart ? (
               <UsageChart data={stats.daily} />
             ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                暂无数据
-              </div>
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">暂无数据</div>
             )}
           </CardContent>
         </Card>
@@ -188,9 +186,7 @@ export default function HomePage() {
                   <div key={p.provider} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">{p.provider}</Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {p.count} 次请求
-                      </span>
+                      <span className="text-sm text-muted-foreground">{p.count} 次请求</span>
                     </div>
                     <div className="text-sm">
                       <span className="text-muted-foreground">Token: </span>
@@ -200,9 +196,7 @@ export default function HomePage() {
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-[100px] text-muted-foreground">
-                暂无数据
-              </div>
+              <div className="flex items-center justify-center h-[100px] text-muted-foreground">暂无数据</div>
             )}
           </CardContent>
         </Card>
@@ -219,9 +213,7 @@ export default function HomePage() {
                 <div key={m.model} className="flex items-center justify-between py-2 border-b last:border-0">
                   <div>
                     <code className="text-sm">{m.model}</code>
-                    <span className="text-sm text-muted-foreground ml-2">
-                      ({m.count} 次)
-                    </span>
+                    <span className="text-sm text-muted-foreground ml-2">({m.count} 次)</span>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     输入: {m.promptTokens.toLocaleString()} | 输出: {m.completionTokens.toLocaleString()}
@@ -230,9 +222,7 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-[100px] text-muted-foreground">
-              暂无数据
-            </div>
+            <div className="flex items-center justify-center h-[100px] text-muted-foreground">暂无数据</div>
           )}
         </CardContent>
       </Card>
@@ -248,13 +238,13 @@ export default function HomePage() {
               <h4 className="font-semibold mb-1">通用代理</h4>
               <p className="text-muted-foreground mb-2">将原 API 地址作为 target 参数传入：</p>
               <code className="block bg-muted p-2 rounded break-all">
-                http://localhost:3000/api/proxy?target=https%3A%2F%2Fapi.openai.com%2Fv1%2Fchat%2Fcompletions
+                http://localhost:3000/api/proxy?target=https://api.openai.com/v1/chat/completions
               </code>
             </div>
             <div>
               <h4 className="font-semibold mb-1">示例：OpenAI SDK</h4>
               <pre className="bg-muted p-2 rounded text-xs overflow-auto">
-{`from openai import OpenAI
+                {`from openai import OpenAI
 
 client = OpenAI(
     base_url="http://localhost:3000/api/proxy?target=https://api.openai.com/v1",
@@ -265,7 +255,7 @@ client = OpenAI(
             <div>
               <h4 className="font-semibold mb-1">示例：Anthropic SDK</h4>
               <pre className="bg-muted p-2 rounded text-xs overflow-auto">
-{`from anthropic import Anthropic
+                {`from anthropic import Anthropic
 
 client = Anthropic(
     base_url="http://localhost:3000/api/proxy?target=https://api.anthropic.com",
