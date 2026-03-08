@@ -29,12 +29,15 @@ async function handleProxy(request: NextRequest) {
   const targetUrl = request.nextUrl.searchParams.get('target')
 
   if (!targetUrl) {
-    return new Response(JSON.stringify({
-      error: 'Missing target URL. Usage: /api/proxy?target=https://api.example.com/endpoint'
-    }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    })
+    return new Response(
+      JSON.stringify({
+        error: 'Missing target URL. Usage: /api/proxy?target=https://api.example.com/endpoint',
+      }),
+      {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    )
   }
 
   // Validate target URL
@@ -42,12 +45,15 @@ async function handleProxy(request: NextRequest) {
   try {
     parsedUrl = new URL(targetUrl)
   } catch {
-    return new Response(JSON.stringify({
-      error: 'Invalid target URL'
-    }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    })
+    return new Response(
+      JSON.stringify({
+        error: 'Invalid target URL',
+      }),
+      {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    )
   }
 
   // Get request headers (forward all except host)
@@ -74,7 +80,10 @@ async function handleProxy(request: NextRequest) {
       requestBody = { _error: 'Failed to parse JSON body' }
     }
   } else if (contentType.includes('multipart/form-data')) {
-    requestBody = { _type: 'multipart/form-data', _note: 'Body not logged for multipart' }
+    requestBody = {
+      _type: 'multipart/form-data',
+      _note: 'Body not logged for multipart',
+    }
   } else {
     try {
       const text = await request.text()
@@ -97,7 +106,7 @@ async function handleProxy(request: NextRequest) {
     // Forward request to target
     const fetchOptions: RequestInit = {
       method: request.method,
-      headers: requestHeaders
+      headers: requestHeaders,
     }
 
     // Add body for methods that support it
@@ -130,12 +139,13 @@ async function handleProxy(request: NextRequest) {
 
     if (responseContentType.includes('text/event-stream') || isStreaming) {
       // Handle streaming response
-      const { stream, collectedData } = await handleStreamingResponse(response)
+      const { stream, collectedData } = handleStreamingResponse(response)
 
       // Save log after stream completes (async, non-blocking)
       collectedData.then((events) => {
         // Parse streaming events for usage info
         const usage = extractUsageFromStream(events, provider)
+        console.log(events, 'events')
 
         saveLog({
           provider,
@@ -152,7 +162,7 @@ async function handleProxy(request: NextRequest) {
           completionTokens: usage.completionTokens,
           totalTokens: usage.totalTokens,
           durationMs,
-          model
+          model,
         })
       })
 
@@ -161,8 +171,8 @@ async function handleProxy(request: NextRequest) {
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive'
-        }
+          Connection: 'keep-alive',
+        },
       })
     } else {
       // Handle non-streaming response
@@ -200,18 +210,19 @@ async function handleProxy(request: NextRequest) {
         completionTokens,
         totalTokens,
         durationMs,
-        model: finalModel
+        model: finalModel,
       })
 
       return new Response(responseText, {
         status: response.status,
         headers: {
-          'Content-Type': responseContentType || 'application/json'
-        }
+          'Content-Type': responseContentType || 'application/json',
+        },
       })
     }
   } catch (error) {
     const durationMs = Date.now() - startTime
+    console.error('Proxy request failed:', error)
 
     // Log failed request
     await saveLog({
@@ -223,22 +234,27 @@ async function handleProxy(request: NextRequest) {
       requestBody,
       responseStatus: 0,
       responseHeaders: {},
-      responseBody: { error: error instanceof Error ? error.message : 'Unknown error' },
+      responseBody: {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
       isStreaming: false,
       promptTokens: null,
       completionTokens: null,
       totalTokens: null,
       durationMs,
-      model
+      model,
     })
 
-    return new Response(JSON.stringify({
-      error: 'Proxy request failed',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    }), {
-      status: 502,
-      headers: { 'Content-Type': 'application/json' }
-    })
+    return new Response(
+      JSON.stringify({
+        error: 'Proxy request failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      }),
+      {
+        status: 502,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    )
   }
 }
 
@@ -248,7 +264,7 @@ function maskSensitiveHeaders(headers: Record<string, string>): Record<string, s
 
   for (const key of Object.keys(masked)) {
     const lowerKey = key.toLowerCase()
-    if (sensitiveKeys.some(k => lowerKey.includes(k))) {
+    if (sensitiveKeys.some((k) => lowerKey.includes(k))) {
       const value = masked[key]
       if (value && value.length > 8) {
         masked[key] = `${value.slice(0, 4)}...${value.slice(-4)}`
@@ -310,7 +326,10 @@ function extractModelFromResponse(body: unknown, provider: string): string | nul
   return null
 }
 
-function extractUsageFromStream(chunks: string[], provider: string): {
+function extractUsageFromStream(
+  chunks: string[],
+  provider: string,
+): {
   promptTokens: number | null
   completionTokens: number | null
   totalTokens: number | null
@@ -347,11 +366,14 @@ function extractUsageFromStream(chunks: string[], provider: string): {
   return {
     promptTokens: promptTokens || null,
     completionTokens: completionTokens || null,
-    totalTokens: (promptTokens && completionTokens) ? promptTokens + completionTokens : null
+    totalTokens: promptTokens && completionTokens ? promptTokens + completionTokens : null,
   }
 }
 
-function extractUsageFromResponse(body: unknown, provider: string): {
+function extractUsageFromResponse(
+  body: unknown,
+  provider: string,
+): {
   promptTokens: number | null
   completionTokens: number | null
   totalTokens: number | null
@@ -377,29 +399,30 @@ function extractUsageFromResponse(body: unknown, provider: string): {
     return {
       promptTokens: inputTokens,
       completionTokens: outputTokens,
-      totalTokens: (inputTokens && outputTokens) ? inputTokens + outputTokens : null
+      totalTokens: inputTokens && outputTokens ? inputTokens + outputTokens : null,
     }
   }
 
   return { promptTokens: null, completionTokens: null, totalTokens: null }
 }
 
-async function handleStreamingResponse(response: Response): Promise<{
+function handleStreamingResponse(response: Response): {
   stream: ReadableStream<Uint8Array>
   collectedData: Promise<string[]>
-}> {
+} {
   if (!response.body) {
     throw new Error('No response body')
   }
 
   const chunks: string[] = []
-  const decoder = new TextDecoder()
-  let buffer = ''
+  let resolve: (value: string[]) => void, reject: (reason?: unknown) => void
 
-  let resolveCollected: (data: string[]) => void
-  const collectedDataPromise = new Promise<string[]>((resolve) => {
-    resolveCollected = resolve
+  const controllablePromise = new Promise<string[]>((res, rej) => {
+    // 将内部的 res/rej 赋值给外部变量
+    resolve = res
+    reject = rej
   })
+  const decoder = new TextDecoder()
 
   const transformStream = new TransformStream<Uint8Array, Uint8Array>({
     transform(chunk, controller) {
@@ -407,40 +430,23 @@ async function handleStreamingResponse(response: Response): Promise<{
       controller.enqueue(chunk)
 
       // Decode and collect
-      buffer += decoder.decode(chunk, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
+      const currentChunk = decoder.decode(chunk, { stream: true })
+      chunks.push(currentChunk)
 
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6).trim()
-          if (data && data !== '[DONE]') {
-            chunks.push(data)
-          }
-        }
-      }
+      console.log(`Received streaming chunk: ${currentChunk}`)
+      // console.log(`Received streaming chunk: ${chunk}`);
     },
     flush() {
       // Process remaining buffer
-      if (buffer.trim()) {
-        const lines = buffer.split('\n')
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6).trim()
-            if (data && data !== '[DONE]') {
-              chunks.push(data)
-            }
-          }
-        }
-      }
-      resolveCollected(chunks)
-    }
+      resolve(chunks)
+      console.log('Streaming response completed')
+    },
   })
 
   // Pipe the original response through the transform
   const stream = response.body.pipeThrough(transformStream)
 
-  return { stream, collectedData: collectedDataPromise }
+  return { stream, collectedData: controllablePromise }
 }
 
 interface LogData {
@@ -478,8 +484,8 @@ async function saveLog(data: LogData): Promise<void> {
         completionTokens: data.completionTokens,
         totalTokens: data.totalTokens,
         durationMs: data.durationMs,
-        model: data.model
-      }
+        model: data.model,
+      },
     })
   } catch (error) {
     console.error('Failed to save log:', error)

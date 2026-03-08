@@ -7,7 +7,8 @@
       "Bash(npm install:*)",
       "Bash(npm run:*)",
       "Bash(npx prisma:*)",
-      "Bash(npm:*)"
+      "Bash(npm:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
